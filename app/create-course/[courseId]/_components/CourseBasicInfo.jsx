@@ -8,7 +8,6 @@ import { CourseList } from "@/configs/schema";
 import { eq } from "drizzle-orm";
 import { db } from "@/configs/db";
 import Link from "next/link";
-import { HiOutlineBookOpen } from "react-icons/hi2";
 import { Button } from "@/components/ui/button";
 
 function CourseBasicInfo({ course, refreshData, edit = true }) {

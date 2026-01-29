@@ -1,8 +1,5 @@
 "use client";
-import { db } from "@/configs/db";
-import { Chapters, CourseList } from "@/configs/schema";
 import { useUser } from "@clerk/nextjs";
-import { and, eq } from "drizzle-orm";
 import React, { useEffect, useState } from "react";
 import CourseBasicInfo from "./_components/CourseBasicInfo";
 import CourseDetail from "./_components/CourseDetail";
@@ -24,17 +21,16 @@ function CourseLayout({ params }) {
   }, [params, user]);
 
   const GetCourse = async () => {
-    const result = await db
-      .select()
-      .from(CourseList)
-      .where(
-        and(
-          eq(CourseList.courseId, params?.courseId),
-          eq(CourseList?.createdBy, user?.primaryEmailAddress?.emailAddress)
-        )
-      );
-    setCourse(result[0]);
-    console.log(result);
+    try {
+      const response = await fetch(`/api/courses/${params?.courseId}`);
+      const result = await response.json();
+      if (result.success) {
+        setCourse(result.data[0]);
+        console.log(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching course:", error);
+    }
   };
   const GenerateChapterContent = () => {
     setLoading(true);
@@ -57,23 +53,45 @@ function CourseLayout({ params }) {
         console.log(result.response?.text());
         const content = JSON.parse(result?.response?.text());
 
-        await db
-          .insert(Chapters)
-          .values({
+        // Send chapter data to API
+        const chapterResponse = await fetch("/api/chapters", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
             chapterId: index,
             courseId: course?.courseId,
             content: content,
             videoId: videoId,
-          })
-          .returning({ id: Chapters.id });
+          }),
+        });
+
+        const chapterResult = await chapterResponse.json();
+        if (!chapterResult.success) throw new Error(chapterResult.error);
+
         setLoading(false);
       } catch (error) {
         setLoading(false);
         console.log(error);
       }
-      await db.update(CourseList).set({
-        publish: true,
-      });
+
+      // Update course to published
+      try {
+        await fetch(`/api/courses/${course?.courseId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            courseId: course?.courseId,
+            publish: true,
+          }),
+        });
+      } catch (error) {
+        console.error("Error publishing course:", error);
+      }
+
       router.replace("/create-course/" + course?.courseId + "/finish");
       //  }
     });

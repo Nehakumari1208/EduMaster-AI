@@ -10,8 +10,6 @@ import SelectOption from "./_components/SelectOption";
 import { UserInputContext } from "../_context/UserInputContext";
 import { GenerateCourseLayout_AI } from "@/configs/AiModel";
 import LoadingDialog from "./_components/LoadingDialog";
-import { db } from "@/configs/db";
-import { CourseList } from "@/configs/schema";
 import uuid4 from "uuid4";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
@@ -100,21 +98,34 @@ function CreateCourse() {
   const SaveCourseLayoutInDb = async (courseLayout) => {
     var id = uuid4();
     setLoading(true);
-    const result = await db.insert(CourseList).values({
-      courseId: id,
-      name: userCourseInput?.topic,
-      level: userCourseInput?.level,
-      category: userCourseInput?.category,
-      courseOutput: courseLayout,
-      createdBy: user?.primaryEmailAddress?.emailAddress,
-      userName: user?.fullName,
-      userProfileImage: user?.imageUrl,
-    });
-    console.log("Finish");
+    try {
+      const response = await fetch("/api/courses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          courseId: id,
+          name: userCourseInput?.topic,
+          level: userCourseInput?.level,
+          category: userCourseInput?.category,
+          courseOutput: courseLayout,
+          createdBy: user?.primaryEmailAddress?.emailAddress,
+          userName: user?.fullName,
+          userProfileImage: user?.imageUrl,
+        }),
+      });
 
-    setLoading(false);
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
 
-    router.replace("/create-course/" + id);
+      console.log("Finish");
+      setLoading(false);
+      router.replace("/create-course/" + id);
+    } catch (error) {
+      console.error("Error saving course:", error);
+      setLoading(false);
+    }
   };
 
   return (
