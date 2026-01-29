@@ -3,9 +3,6 @@ import Header from "@/app/_components/Header";
 import ChapterList from "@/app/create-course/[courseId]/_components/ChapterList";
 import CourseBasicInfo from "@/app/create-course/[courseId]/_components/CourseBasicInfo";
 import CourseDetail from "@/app/create-course/[courseId]/_components/CourseDetail";
-import { db } from "@/configs/db";
-import { CourseList } from "@/configs/schema";
-import { eq } from "drizzle-orm";
 import React, { useEffect, useState } from "react";
 
 function Course({ params }) {
@@ -23,11 +20,13 @@ function Course({ params }) {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await db
-        .select()
-        .from(CourseList)
-        .where(eq(CourseList?.courseId, params?.courseId));
-      setCourse(result[0] || null);
+      const response = await fetch(`/api/courses/${params?.courseId}`);
+      const result = await response.json();
+      if (result.success && result.data.length > 0) {
+        setCourse(result.data[0]);
+      } else {
+        setCourse(null);
+      }
     } catch (error) {
       console.error("Failed to fetch course:", error);
       setError("Failed to load course. Please try again.");

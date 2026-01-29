@@ -1,7 +1,4 @@
 "use client";
-import { db } from "@/configs/db";
-import { Chapters, CourseList } from "@/configs/schema";
-import { and, eq } from "drizzle-orm";
 import React, { useEffect, useState } from "react";
 import ChapterListCard from "./_components/ChapterListCard";
 import ChapterContent from "./_components/ChapterContent";
@@ -18,24 +15,29 @@ function CourseStart({ params }) {
   }, []);
 
   const GetCourse = async () => {
-    const result = await db
-      .select()
-      .from(CourseList)
-      .where(eq(CourseList?.courseId, params?.courseId));
-    setCourse(result[0]);
+    try {
+      const response = await fetch(`/api/courses/${params?.courseId}`);
+      const result = await response.json();
+      if (result.success && result.data.length > 0) {
+        setCourse(result.data[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching course:", error);
+    }
   };
 
   const GetSelectedChapterContent = async (chapterId) => {
-    const result = await db
-      .select()
-      .from(Chapters)
-      .where(
-        and(
-          eq(Chapters.chapterId, chapterId),
-          eq(Chapters.courseId, course?.courseId)
-        )
+    try {
+      const response = await fetch(
+        `/api/chapters?chapterId=${chapterId}&courseId=${course?.courseId}`,
       );
-    selectChapterContent(result[0]);
+      const result = await response.json();
+      if (result.success && result.data.length > 0) {
+        selectChapterContent(result.data[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching chapter:", error);
+    }
   };
 
   return (

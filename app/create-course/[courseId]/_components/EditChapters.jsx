@@ -12,9 +12,6 @@ import {
 import { HiPencilSquare } from "react-icons/hi2";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { db } from "@/configs/db";
-import { eq } from "drizzle-orm";
-import { CourseList } from "@/configs/schema";
 import { Button } from "@/components/ui/button";
 
 function EditChapters({ course, index, refreshData }) {
@@ -30,12 +27,24 @@ function EditChapters({ course, index, refreshData }) {
   const onUpdateHandler = async () => {
     course.courseOutput.course.chapters[index].name = name;
     course.courseOutput.course.chapters[index].about = about;
-    await db
-      .update(CourseList)
-      .set({ courseOutput: course?.courseOutput })
-      .where(eq(CourseList?.id, course?.id))
-      .returning({ id: CourseList.id });
-    refreshData(true);
+    try {
+      const response = await fetch(`/api/courses/${course?.courseId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          courseId: course?.courseId,
+          courseOutput: course?.courseOutput,
+        }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        refreshData(true);
+      }
+    } catch (error) {
+      console.error("Error updating course:", error);
+    }
   };
 
   return (

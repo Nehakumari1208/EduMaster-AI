@@ -1,8 +1,5 @@
 "use client";
-import { db } from "@/configs/db";
-import { CourseList } from "@/configs/schema";
 import { useUser } from "@clerk/nextjs";
-import { and, eq } from "drizzle-orm";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import CourseBasicInfo from "../_components/CourseBasicInfo";
@@ -19,25 +16,24 @@ function FinishScreen({ params }) {
   }, [params, user]);
 
   const GetCourse = async () => {
-    const result = await db
-      .select()
-      .from(CourseList)
-      .where(
-        and(
-          eq(CourseList.courseId, params?.courseId),
-          eq(CourseList?.createdBy, user?.primaryEmailAddress?.emailAddress)
-        )
-      );
-    setCourse(result[0]);
-    console.log(result);
+    try {
+      const response = await fetch(`/api/courses/${params?.courseId}`);
+      const result = await response.json();
+      if (result.success && result.data.length > 0) {
+        setCourse(result.data[0]);
+        console.log(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching course:", error);
+    }
   };
 
   const handleCopy = async () => {
-      const host = process.env.NEXT_PUBLIC_HOST_NAME || window.location.origin;
-      const url = `${host}/course/view/${course?.courseId}`;
-      await navigator.clipboard.writeText(url);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+    const host = process.env.NEXT_PUBLIC_HOST_NAME || window.location.origin;
+    const url = `${host}/course/view/${course?.courseId}`;
+    await navigator.clipboard.writeText(url);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
   return (

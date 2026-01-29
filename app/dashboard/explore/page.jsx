@@ -1,6 +1,4 @@
 "use client";
-import { db } from "@/configs/db";
-import { CourseList } from "@/configs/schema";
 import React, { useContext, useEffect, useState } from "react";
 import CourseCard from "../_components/CourseCard";
 import { Button } from "@/components/ui/button";
@@ -17,13 +15,15 @@ function Explore() {
 
   const GetAllCourses = async () => {
     setLoading(true);
-    const result = await db
-      .select()
-      .from(CourseList)
-      .limit(9)
-      .offset(pageIndex * 9);
-    setCourseList(result);
-    console.log(result);
+    try {
+      const response = await fetch(`/api/courses`);
+      const result = await response.json();
+      if (result.success) {
+        setCourseList(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    }
     setLoading(false);
   };
   return (

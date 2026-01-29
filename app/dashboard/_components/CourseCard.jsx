@@ -3,9 +3,6 @@ import React, { useEffect } from "react";
 import { HiOutlineBookOpen } from "react-icons/hi2";
 import { FaEllipsisVertical } from "react-icons/fa6";
 import DropdownOption from "./DropdownOption";
-import { db } from "@/configs/db";
-import { CourseList } from "@/configs/schema";
-import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -13,12 +10,16 @@ function CourseCard({ course, refreshData, displayUser = true }) {
   const router = useRouter();
 
   const handleOnDelete = async () => {
-    const resp = await db
-      .delete(CourseList)
-      .where(eq(CourseList.id, course?.id))
-      .returning({ id: CourseList?.id });
-    if (resp) {
-      refreshData();
+    try {
+      const response = await fetch(`/api/courses/${course?.courseId}`, {
+        method: "DELETE",
+      });
+      const resp = await response.json();
+      if (resp.success) {
+        refreshData();
+      }
+    } catch (error) {
+      console.error("Error deleting course:", error);
     }
   };
 

@@ -44,3 +44,22 @@ export async function PUT(request, { params }) {
     );
   }
 }
+
+export async function DELETE(request, { params }) {
+  try {
+    const result = await db
+      .delete(CourseList)
+      .where(eq(CourseList.courseId, params.courseId));
+
+    return Response.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error deleting course:", error);
+    return Response.json(
+      { success: false, error: error.message },
+      { status: 500 },
+    );
+  }
+}

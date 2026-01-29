@@ -4,9 +4,6 @@ import { HiOutlinePuzzle } from "react-icons/hi";
 import EditCourseBaasicInfo from "./EditCourseBasicInfo";
 import { storage } from "@/configs/firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { CourseList } from "@/configs/schema";
-import { eq } from "drizzle-orm";
-import { db } from "@/configs/db";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -31,12 +28,21 @@ function CourseBasicInfo({ course, refreshData, edit = true }) {
       .then((resp) => {
         getDownloadURL(storageRef).then(async (downloadUrl) => {
           console.log(downloadUrl);
-          await db
-            .update(CourseList)
-            .set({
-              courseBanner: downloadUrl,
-            })
-            .where(eq(CourseList.id, course?.id));
+          try {
+            await fetch(`/api/courses/${course?.courseId}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                courseId: course?.courseId,
+                courseBanner: downloadUrl,
+              }),
+            });
+            refreshData?.();
+          } catch (error) {
+            console.error("Error updating banner:", error);
+          }
         });
       });
   };
