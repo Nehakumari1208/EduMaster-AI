@@ -3,11 +3,15 @@ import Header from "@/app/_components/Header";
 import ChapterList from "@/app/create-course/[courseId]/_components/ChapterList";
 import CourseBasicInfo from "@/app/create-course/[courseId]/_components/CourseBasicInfo";
 import CourseDetail from "@/app/create-course/[courseId]/_components/CourseDetail";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
 function Course({ params }) {
   const [course, setCourse] = useState();
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
     if (params) {
@@ -21,7 +25,17 @@ function Course({ params }) {
       const response = await fetch(`/api/courses/${params?.courseId}`);
       const result = await response.json();
       if (result.success && result.data.length > 0) {
-        setCourse(result.data[0]);
+        const fetchedCourse = result.data[0];
+
+        // If user is the creator, redirect to edit page
+        if (
+          fetchedCourse?.createdBy === user?.primaryEmailAddress?.emailAddress
+        ) {
+          router.replace(`/create-course/${params?.courseId}`);
+          return;
+        }
+
+        setCourse(fetchedCourse);
         console.log(result.data);
       }
     } catch (error) {
